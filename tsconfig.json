@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "declaration": true,
+    "module": "commonjs",
+    "strict": true,
+    "outDir": "./dist",
+  }
+}
