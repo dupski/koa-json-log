@@ -1,7 +1,7 @@
 
 import * as Koa from 'koa';
 
-interface ILogData {
+export interface ILogData {
     method: string;
     url: string;
     query: string;
@@ -19,6 +19,7 @@ export interface ILogOptions {
     jsonLog: boolean;
     requestLogFn: (data: string) => boolean;
     errorLogFn: (data: string) => boolean;
+    onLog: (data: ILogData) => void;
 }
 
 export function getOptions(options?: Partial<ILogOptions>) {
@@ -39,14 +40,20 @@ export function jsonLog(options?: Partial<ILogOptions>) {
 
     const opts = getOptions(options);
 
-    function outputLog(data: Partial<ILogData>, thrownError: any) {
+    function outputLog(data: ILogData, thrownError: any) {
+        if (opts.onLog) {
+            opts.onLog(data);
+        }
         if (!opts.jsonLog) {
-            console.log(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
             if (thrownError) {
-                console.error(thrownError);
+                opts.errorLogFn(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
+                opts.errorLogFn(thrownError);
+            }
+            else {
+                opts.requestLogFn(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
             }
         }
-        else if (data.statusCode && data.statusCode < 400) {
+        else if (data.statusCode < 400) {
             opts.requestLogFn(JSON.stringify(data) + '\n');
         }
         else {
@@ -83,7 +90,7 @@ export function jsonLog(options?: Partial<ILogOptions>) {
         }
 
         logData.responseTime = new Date().getMilliseconds() - start;
-        outputLog(logData, errorThrown);
+        outputLog(logData as ILogData, errorThrown);
 
         if (errorThrown) {
             ctx.status = 500;
