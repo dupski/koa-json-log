@@ -17,15 +17,15 @@ export interface ILogData {
 }
 
 export interface ILogOptions {
-    jsonLog: boolean;
+    json: boolean;
     logFn: (data: string) => boolean;
     onLog: (data: ILogData) => void;
 }
 
 export function getOptions(options?: Partial<ILogOptions>) {
     const opts = options || {};
-    if (typeof opts.jsonLog == 'undefined') {
-        opts.jsonLog = process.env.NODE_ENV != 'development';
+    if (typeof opts.json == 'undefined') {
+        opts.json = process.env.NODE_ENV != 'development';
     }
     if (typeof opts.logFn == 'undefined') {
         opts.logFn = process.stdout.write;
@@ -41,7 +41,7 @@ export function jsonLog(options?: Partial<ILogOptions>) {
         if (opts.onLog) {
             opts.onLog(data);
         }
-        if (!opts.jsonLog) {
+        if (!opts.json) {
             opts.logFn(`${data.timestamp} - ${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
             if (thrownError) {
                 opts.logFn(data.errorStack);

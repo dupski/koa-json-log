@@ -9,12 +9,12 @@ describe('logger options', () => {
             process.env.NODE_ENV = 'development';
         });
 
-        it('options.jsonLog = false', () => {
-            expect(getOptions()).toHaveProperty('jsonLog', false);
+        it('options.json = false', () => {
+            expect(getOptions()).toHaveProperty('json', false);
         });
 
-        it('options.jsonLog can be overridden', () => {
-            expect(getOptions({ jsonLog: true })).toHaveProperty('jsonLog', true);
+        it('options.json can be overridden', () => {
+            expect(getOptions({ json: true })).toHaveProperty('json', true);
         });
 
     });
@@ -25,12 +25,12 @@ describe('logger options', () => {
             process.env.NODE_ENV = 'something_else';
         });
 
-        it('options.jsonLog = true', () => {
-            expect(getOptions()).toHaveProperty('jsonLog', true);
+        it('options.json = true', () => {
+            expect(getOptions()).toHaveProperty('json', true);
         });
 
-        it('options.jsonLog can be overridden', () => {
-            expect(getOptions({ jsonLog: false })).toHaveProperty('jsonLog', false);
+        it('options.json can be overridden', () => {
+            expect(getOptions({ json: false })).toHaveProperty('json', false);
         });
 
     });
