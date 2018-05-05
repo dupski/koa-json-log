@@ -9,7 +9,9 @@
         "no-console": false,
         "no-string-literal": false,
         "object-literal-sort-keys": false,
-        "one-line": false
+        "ordered-imports": false,
+        "one-line": false,
+        "triple-equals": false
     },
     "rulesDirectory": []
 }
