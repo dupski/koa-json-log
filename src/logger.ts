@@ -15,30 +15,13 @@ interface ILogData {
     responseTime: number;
 }
 
-export interface ILogConfig {
-    jsonLog?: boolean;
-    requestLogFn?: (data: string) => boolean;
-    errorLogFn?: (data: string) => boolean;
+export interface ILogOptions {
+    jsonLog: boolean;
+    requestLogFn: (data: string) => boolean;
+    errorLogFn: (data: string) => boolean;
 }
 
-const prettyLog = process.env.NODE_ENV === 'development';
-
-function outputLog(data: Partial<ILogData>, thrownError: any) {
-    if (prettyLog) {
-        console.log(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
-        if (thrownError) {
-            console.error(thrownError);
-        }
-    }
-    else if (data.statusCode && data.statusCode < 400) {
-        process.stdout.write(JSON.stringify(data) + '\n');
-    }
-    else {
-        process.stderr.write(JSON.stringify(data) + '\n');
-    }
-}
-
-export function getOptions(options?: ILogConfig): ILogConfig {
+export function getOptions(options?: Partial<ILogOptions>) {
     const opts = options || {};
     if (typeof opts.jsonLog == 'undefined') {
         opts.jsonLog = process.env.NODE_ENV != 'development';
@@ -49,10 +32,27 @@ export function getOptions(options?: ILogConfig): ILogConfig {
     if (typeof opts.errorLogFn == 'undefined') {
         opts.errorLogFn = process.stderr.write;
     }
-    return opts;
+    return opts as ILogOptions;
 }
 
-export function jsonLog(options?: ILogConfig) {
+export function jsonLog(options?: Partial<ILogOptions>) {
+
+    const opts = getOptions(options);
+
+    function outputLog(data: Partial<ILogData>, thrownError: any) {
+        if (!opts.jsonLog) {
+            console.log(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
+            if (thrownError) {
+                console.error(thrownError);
+            }
+        }
+        else if (data.statusCode && data.statusCode < 400) {
+            opts.requestLogFn(JSON.stringify(data) + '\n');
+        }
+        else {
+            opts.errorLogFn(JSON.stringify(data) + '\n');
+        }
+    }
 
     return async function logger(ctx: Koa.Context, next: () => Promise<any>) {
 
