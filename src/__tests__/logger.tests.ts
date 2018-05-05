@@ -10,25 +10,20 @@ describe('logger', () => {
     let server: Server;
     let request: SuperTest<Test>;
     let logData: ILogData[];
-    let requestLog: string[];
-    let errorLog: string[];
+    let logOutput: string[];
 
     function setup(options: {
         statusCode: number,
     }) {
         const app = new Koa();
         logData = [];
-        requestLog = [];
-        errorLog = [];
+        logOutput = [];
         app.use(jsonLog({
             onLog: (data) => {
                 logData.push(data);
             },
-            requestLogFn: (data) => {
-                requestLog.push(data); return true;
-            },
-            errorLogFn: (data) => {
-                errorLog.push(data); return true;
+            logFn: (data) => {
+                logOutput.push(data); return true;
             },
         }));
         app.use((ctx) => {
@@ -49,18 +44,45 @@ describe('logger', () => {
             process.env.NODE_ENV = 'development';
         });
 
-        it('logs successful request', async () => {
-            setup({ statusCode: 200 });
+        [
+            200,
+            201,
+            204,
+            302,
+        ]
+        .map((statusCode) => {
+            it('logs successful request: ' + statusCode, async () => {
+                setup({ statusCode });
 
-            const response = await request.get('/');
-            expect(response.status).toEqual(200);
-            expect(errorLog).toHaveLength(0);
-            expect(requestLog).toHaveLength(1);
+                const response = await request.get('/');
+                expect(response.status).toEqual(statusCode);
+                expect(logOutput).toHaveLength(1);
 
-            const data = logData[0];
-            const expectedLog = `200 GET / - ${data.responseTime}ms`;
+                const data = logData[0];
+                const expectedLog = `${data.timestamp} - ${statusCode} GET / - ${data.responseTime}ms`;
 
-            expect(requestLog[0]).toEqual(expectedLog);
+                expect(logOutput[0]).toEqual(expectedLog);
+            });
+        });
+
+        [
+            400,
+            401,
+            404,
+        ]
+        .map((statusCode) => {
+            it('logs problem request: ' + statusCode, async () => {
+                setup({ statusCode });
+
+                const response = await request.get('/');
+                expect(response.status).toEqual(statusCode);
+                expect(logOutput).toHaveLength(1);
+
+                const data = logData[0];
+                const expectedLog = `${data.timestamp} - ${statusCode} GET / - ${data.responseTime}ms`;
+
+                expect(logOutput[0]).toEqual(expectedLog);
+            });
         });
 
     });

@@ -2,6 +2,7 @@
 import * as Koa from 'koa';
 
 export interface ILogData {
+    timestamp: string;
     method: string;
     url: string;
     query: string;
@@ -17,8 +18,7 @@ export interface ILogData {
 
 export interface ILogOptions {
     jsonLog: boolean;
-    requestLogFn: (data: string) => boolean;
-    errorLogFn: (data: string) => boolean;
+    logFn: (data: string) => boolean;
     onLog: (data: ILogData) => void;
 }
 
@@ -27,11 +27,8 @@ export function getOptions(options?: Partial<ILogOptions>) {
     if (typeof opts.jsonLog == 'undefined') {
         opts.jsonLog = process.env.NODE_ENV != 'development';
     }
-    if (typeof opts.requestLogFn == 'undefined') {
-        opts.requestLogFn = process.stdout.write;
-    }
-    if (typeof opts.errorLogFn == 'undefined') {
-        opts.errorLogFn = process.stderr.write;
+    if (typeof opts.logFn == 'undefined') {
+        opts.logFn = process.stdout.write;
     }
     return opts as ILogOptions;
 }
@@ -45,27 +42,23 @@ export function jsonLog(options?: Partial<ILogOptions>) {
             opts.onLog(data);
         }
         if (!opts.jsonLog) {
+            opts.logFn(`${data.timestamp} - ${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
             if (thrownError) {
-                opts.errorLogFn(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
-                opts.errorLogFn(thrownError);
+                opts.logFn(thrownError);
             }
-            else {
-                opts.requestLogFn(`${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
-            }
-        }
-        else if (data.statusCode < 400) {
-            opts.requestLogFn(JSON.stringify(data) + '\n');
         }
         else {
-            opts.errorLogFn(JSON.stringify(data) + '\n');
+            opts.logFn(JSON.stringify(data) + '\n');
         }
     }
 
     return async function logger(ctx: Koa.Context, next: () => Promise<any>) {
 
-        const start = new Date().getMilliseconds();
+        const startDate = new Date();
+        const start = startDate.getMilliseconds();
 
         const logData: Partial<ILogData> = {
+            timestamp: startDate.toISOString(),
             method: ctx.method,
             url: ctx.url,
             query: ctx.query,

@@ -37,26 +37,15 @@ describe('logger options', () => {
 
     describe('log output functions', () => {
 
-        it('uses stdout for request logs by default', () => {
+        it('uses stdout for logs by default', () => {
             const options = getOptions();
-            expect(options.requestLogFn).toBe(process.stdout.write);
+            expect(options.logFn).toBe(process.stdout.write);
         });
 
-        it('uses stderr for error logs by default', () => {
-            const options = getOptions();
-            expect(options.errorLogFn).toBe(process.stderr.write);
-        });
-
-        it('can override request log function', () => {
+        it('can override log function', () => {
             const fn = jest.fn();
-            const options = getOptions({ requestLogFn: fn });
-            expect(options.requestLogFn).toBe(fn);
-        });
-
-        it('can override error log function', () => {
-            const fn = jest.fn();
-            const options = getOptions({ errorLogFn: fn });
-            expect(options.errorLogFn).toBe(fn);
+            const options = getOptions({ logFn: fn });
+            expect(options.logFn).toBe(fn);
         });
 
     });
