@@ -10,5 +10,6 @@ module.exports = {
         "jsx",
         "json",
         "node"
-    ]
+    ],
+    "verbose": true
 };

@@ -44,7 +44,7 @@ export function jsonLog(options?: Partial<ILogOptions>) {
         if (!opts.jsonLog) {
             opts.logFn(`${data.timestamp} - ${data.statusCode} ${data.method} ${data.url} - ${data.responseTime}ms`);
             if (thrownError) {
-                opts.logFn(thrownError);
+                opts.logFn(data.errorStack);
             }
         }
         else {
@@ -74,20 +74,20 @@ export function jsonLog(options?: Partial<ILogOptions>) {
         }
         catch (e) {
             errorThrown = e;
+            ctx.status = e.status || 500;
             logData.errorMessage = e.message;
             logData.errorStack = e.stack;
-            logData.statusCode = e.status || 500;
+            logData.statusCode = ctx.status;
             if (e.data) {
                 logData.data = e.data;
+            }
+            if (e.expose) {
+                ctx.body = e.message;
             }
         }
 
         logData.responseTime = new Date().getMilliseconds() - start;
         outputLog(logData as ILogData, errorThrown);
-
-        if (errorThrown) {
-            ctx.status = 500;
-        }
 
     };
 

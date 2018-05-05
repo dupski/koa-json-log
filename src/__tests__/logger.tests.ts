@@ -13,7 +13,9 @@ describe('logger', () => {
     let logOutput: string[];
 
     function setup(options: {
-        statusCode: number,
+        statusCode?: number,
+        ctxThrow?: string,
+        throw?: string,
     }) {
         const app = new Koa();
         logData = [];
@@ -27,8 +29,16 @@ describe('logger', () => {
             },
         }));
         app.use((ctx) => {
-            ctx.status = options.statusCode;
-            ctx.body = 'Hello Tests!';
+            if (options.ctxThrow) {
+                ctx.throw(options.statusCode || 500, options.ctxThrow);
+            }
+            else if (options.throw) {
+                throw new Error(options.throw);
+            }
+            else {
+                ctx.status = options.statusCode || 200;
+                ctx.body = 'Hello Tests!';
+            }
         });
         server = app.listen();
         request = agent(server);
@@ -83,6 +93,46 @@ describe('logger', () => {
 
                 expect(logOutput[0]).toEqual(expectedLog);
             });
+        });
+
+        [
+            { ctxThrow: 'Unauthorised', statusCode: 401 },
+            { ctxThrow: 'Cant find it bruv!', statusCode: 404 },
+        ]
+        .map((options) => {
+            it('handles ctx.throw(): ' + options.statusCode, async () => {
+                setup(options);
+
+                const response = await request.get('/');
+                expect(response.status).toEqual(options.statusCode);
+                expect(response.text).toEqual(options.ctxThrow);
+
+                expect(logOutput).toHaveLength(2);
+
+                const data = logData[0];
+                const expectedLog1 = `${data.timestamp} - ${options.statusCode} GET / - ${data.responseTime}ms`;
+                const expectedLog2 = data.errorStack;
+
+                expect(logOutput[0]).toEqual(expectedLog1);
+                expect(logOutput[1]).toEqual(expectedLog2);
+            });
+        });
+
+        it('handles other thrown errors', async () => {
+            setup({ throw: 'Ack nooo!!!' });
+
+            const response = await request.get('/');
+            expect(response.status).toEqual(500);
+            expect(response.text).toEqual('Internal Server Error');
+
+            expect(logOutput).toHaveLength(2);
+
+            const data = logData[0];
+            const expectedLog1 = `${data.timestamp} - 500 GET / - ${data.responseTime}ms`;
+            const expectedLog2 = data.errorStack;
+
+            expect(logOutput[0]).toEqual(expectedLog1);
+            expect(logOutput[1]).toEqual(expectedLog2);
         });
 
     });
