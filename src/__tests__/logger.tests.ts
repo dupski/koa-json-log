@@ -15,7 +15,7 @@ describe('logger', () => {
     function setup(options: {
         statusCode?: number,
         ctxThrow?: string,
-        throw?: string,
+        throw?: Error,
     }) {
         const app = new Koa();
         logData = [];
@@ -33,7 +33,7 @@ describe('logger', () => {
                 ctx.throw(options.statusCode || 500, options.ctxThrow);
             }
             else if (options.throw) {
-                throw new Error(options.throw);
+                throw options.throw;
             }
             else {
                 ctx.status = options.statusCode || 200;
@@ -121,7 +121,7 @@ describe('logger', () => {
         });
 
         it('handles other thrown errors', async () => {
-            setup({ throw: 'Ack nooo!!!' });
+            setup({ throw: new Error('Ack nooo!!!') });
 
             const response = await request.get('/');
             expect(response.status).toEqual(500);
@@ -241,8 +241,8 @@ describe('logger', () => {
             });
         });
 
-        it('handles other thrown errors', async () => {
-            setup({ throw: 'Ack nooo!!!' });
+        it('handles other thrown errors and does not expose error details', async () => {
+            setup({ throw: new Error('Ack nooo!!!') });
 
             const response = await request.get('/');
             expect(response.status).toEqual(500);
@@ -264,6 +264,97 @@ describe('logger', () => {
                     statusCode: 500,
                     errorMessage: data.errorMessage,
                     errorStack: data.errorStack,
+                },
+            );
+        });
+
+        it('handles other thrown errors and can expose details', async () => {
+            const err: any = new Error('Ack nooo!!!');
+            err.expose = true;
+            setup({ throw: err });
+
+            const response = await request.get('/');
+            expect(response.status).toEqual(500);
+            expect(response.text).toEqual('Ack nooo!!!');
+
+            expect(logOutput).toHaveLength(1);
+
+            const data = logData[0];
+            expect(JSON.parse(logOutput[0])).toEqual(
+                {
+                    timestamp: data.timestamp,
+                    method: 'GET',
+                    url: '/',
+                    query: {},
+                    host: data.host,
+                    userAgent: data.userAgent,
+                    remoteAddress: data.remoteAddress,
+                    responseTime: data.responseTime,
+                    statusCode: 500,
+                    errorMessage: data.errorMessage,
+                    errorStack: data.errorStack,
+                },
+            );
+        });
+
+        it('handles other thrown errors and uses status', async () => {
+            const err: any = new Error('Ack nooo!!!');
+            err.status = 503;
+            setup({ throw: err });
+
+            const response = await request.get('/');
+            expect(response.status).toEqual(503);
+            expect(response.text).toEqual('Service Unavailable');
+
+            expect(logOutput).toHaveLength(1);
+
+            const data = logData[0];
+            expect(JSON.parse(logOutput[0])).toEqual(
+                {
+                    timestamp: data.timestamp,
+                    method: 'GET',
+                    url: '/',
+                    query: {},
+                    host: data.host,
+                    userAgent: data.userAgent,
+                    remoteAddress: data.remoteAddress,
+                    responseTime: data.responseTime,
+                    statusCode: 503,
+                    errorMessage: data.errorMessage,
+                    errorStack: data.errorStack,
+                },
+            );
+        });
+
+        it('handles other thrown errors and logs error data', async () => {
+            const err: any = new Error('Ack nooo!!!');
+            err.data = {
+                service: 'http://myservice.com',
+                responseCode: 'something_failed',
+            };
+            setup({ throw: err });
+
+            const response = await request.get('/');
+            expect(response.status).toEqual(500);
+            expect(response.text).toEqual('Internal Server Error');
+
+            expect(logOutput).toHaveLength(1);
+
+            const data = logData[0];
+            expect(JSON.parse(logOutput[0])).toEqual(
+                {
+                    timestamp: data.timestamp,
+                    method: 'GET',
+                    url: '/',
+                    query: {},
+                    host: data.host,
+                    userAgent: data.userAgent,
+                    remoteAddress: data.remoteAddress,
+                    responseTime: data.responseTime,
+                    statusCode: 500,
+                    errorMessage: data.errorMessage,
+                    errorStack: data.errorStack,
+                    data: err.data,
                 },
             );
         });
