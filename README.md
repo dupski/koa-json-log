@@ -1,12 +1,12 @@
 # koa-json-log
 
 This is a simple [Koa](http://koajs.com/) middleware that outputs HTTP requests
-and response codes as JSON data. During development these are shown in a 
+and response details as JSON data. During development, logs are shown in a 
 human-readable format.
 
 ## Features
 
- * Zero-dependency. Logs are output to `stdout` and `stderr`.
+ * Zero-dependency. Logs are output to `stdout`.
  * Tools like [PM2](http://pm2.keymetrics.io/docs/usage/log-management/) can
    then be used to write logs to files if needed.
  * Development Mode (when `NODE_ENV` == `development`), shows human-readable logs.
@@ -82,11 +82,11 @@ app.use(jsonLog());
 
 The following options can be passed to `jsonLog()` (as an object):
 
- * `json` - boolean - enable / disable JSON format (by default this is based on
+ * `json` - *boolean* - enable / disable JSON format (by default this is based on
    `NODE_ENV`)
- * `onLog` - function - you can override this function to intercept and modify
+ * `onLog` - *function* - you can override this function to intercept and modify
    the log data object before it is written to the log. 
- * `logFn` - function - override this function to redirect your log output. It is
+ * `logFn` - *function* - override this function to redirect your log output. It is
    called with every log line. By default this is set to `process.stdout.write`.
 
 ## Error Details

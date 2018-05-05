@@ -36,10 +36,22 @@ describe('logger options', () => {
     });
 
     describe('log output functions', () => {
+        let stdoutWrite: any;
+        let stdoutSpy: jest.Mock;
+
+        beforeEach(() => {
+            stdoutSpy = jest.fn();
+            stdoutWrite = process.stdout.write;
+            process.stdout.write = stdoutSpy;
+        });
+        afterEach(() => {
+            process.stdout.write = stdoutWrite;
+        });
 
         it('uses stdout for logs by default', () => {
             const options = getOptions();
-            expect(options.logFn).toBe(process.stdout.write);
+            options.logFn('test_data');
+            expect(stdoutSpy).toHaveBeenCalledWith('test_data');
         });
 
         it('can override log function', () => {

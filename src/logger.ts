@@ -18,7 +18,7 @@ export interface ILogData {
 
 export interface ILogOptions {
     json: boolean;
-    logFn: (data: string) => boolean;
+    logFn: (data: string) => void;
     onLog: (data: ILogData) => void;
 }
 
@@ -28,7 +28,9 @@ export function getOptions(options?: Partial<ILogOptions>) {
         opts.json = process.env.NODE_ENV != 'development';
     }
     if (typeof opts.logFn == 'undefined') {
-        opts.logFn = process.stdout.write;
+        opts.logFn = (data) => {
+            process.stdout.write(data);
+        };
     }
     return opts as ILogOptions;
 }
